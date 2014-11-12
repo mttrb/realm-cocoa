@@ -150,7 +150,7 @@ RLM_ARRAY_TYPE(SchemaTestClassSecondChild)
 
         // Test creating objects of each class
         [self.class deleteFiles];
-        RLMRealm *realm = [self dynamicRealmWithTestPathAndSchema:schema];
+        RLMRealm *realm = [self realmWithTestPathAndSchema:schema];
         [realm beginWriteTransaction];
         [SchemaTestClassBase createInRealm:realm withObject:@{@"baseCol": @[@0]}];
         [SchemaTestClassFirstChild createInRealm:realm withObject:@{@"baseCol": @[@0], @"firstChildCol": @[@0]}];
@@ -191,7 +191,7 @@ RLM_ARRAY_TYPE(SchemaTestClassSecondChild)
     [self realmWithTestPathAndSchema:schema];
 
     // get dynamic realm and extract schema
-    RLMRealm *realm = [self dynamicRealmWithTestPathAndSchema:nil];
+    RLMRealm *realm = [self realmWithTestPathAndSchema:nil];
     schema = realm.schema;
 
     // Test 1: Does the objectSchema return the right number of object schemas?

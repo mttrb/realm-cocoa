@@ -508,7 +508,7 @@ void update_query_with_column_expression(RLMObjectSchema *scheme, Query &query, 
     }
 }
 
-void update_query_with_predicate(NSPredicate *predicate, RLMSchema *schema,
+bool update_query_with_predicate(NSPredicate *predicate, RLMSchema *schema,
                                  RLMObjectSchema *objectSchema, tightdb::Query & query)
 {
     // Compound predicates.
@@ -517,6 +517,10 @@ void update_query_with_predicate(NSPredicate *predicate, RLMSchema *schema,
 
         switch ([comp compoundPredicateType]) {
             case NSAndPredicateType:
+                if (comp.subpredicates.count == 0) {
+                    // Empty AND predicate is a no-op
+                    return false;
+                }
                 // Add all of the subpredicates.
                 query.group();
                 for (NSPredicate *subp in comp.subpredicates) {
@@ -526,6 +530,10 @@ void update_query_with_predicate(NSPredicate *predicate, RLMSchema *schema,
                 break;
 
             case NSOrPredicateType: {
+                if (comp.subpredicates.count == 0) {
+                    // FIXME: Empty OR predicate means query is always empty
+                    break;
+                }
                 // Add all of the subpredicates with ors inbetween.
                 process_or_group(query, comp.subpredicates, [&](NSPredicate *subp) {
                     update_query_with_predicate(subp, schema, objectSchema, query);
@@ -592,11 +600,19 @@ void update_query_with_predicate(NSPredicate *predicate, RLMSchema *schema,
                                          @"Predicate expressions must compare a keypath and another keypath or a constant value");
         }
     }
+    else if ([predicate isMemberOfClass:NSClassFromString(@"NSTruePredicate")]) {
+        // no-op
+        return false;
+    }
+    else if ([predicate isMemberOfClass:NSClassFromString(@"NSFalsePredicate")]) {
+        // FIXME: query is always empty
+    }
     else {
         // invalid predicate type
         @throw RLMPredicateException(@"Invalid predicate",
                                      @"Only support compound and comparison predicates");
     }
+    return true;
 }
 
 RLMProperty *RLMValidatedPropertyForSort(RLMObjectSchema *schema, NSString *propName) {
@@ -633,12 +649,12 @@ void RLMUpdateQueryWithPredicate(tightdb::Query *query, NSPredicate *predicate, 
     RLMPrecondition([predicate isKindOfClass:NSPredicate.class], @"Invalid argument",
                     @"predicate must be an NSPredicate object");
 
-    update_query_with_predicate(predicate, schema, objectSchema, *query);
-
-    // Test the constructed query in core
-    std::string validateMessage = query->validate();
-    RLMPrecondition(validateMessage.empty(), @"Invalid query", @"%.*s",
-                    (int)validateMessage.size(), validateMessage.c_str());
+    if (update_query_with_predicate(predicate, schema, objectSchema, *query)) {
+        // Test the constructed query in core if returned true
+        std::string validateMessage = query->validate();
+        RLMPrecondition(validateMessage.empty(), @"Invalid query", @"%.*s",
+                        (int)validateMessage.size(), validateMessage.c_str());
+    }
 }
 
 void RLMGetColumnIndices(RLMObjectSchema *schema, NSArray *properties,

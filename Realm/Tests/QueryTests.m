@@ -410,6 +410,26 @@
     XCTAssertThrows([[realm objects:nil where:@"age > 25"] sortedResultsUsingProperty:@"age" ascending:YES], @"nil class name");
 }
 
+- (void)testAndOrTrueFalsePredicates
+{
+    RLMRealm *realm = self.realmWithTestPath;
+    [realm beginWriteTransaction];
+    [IntObject createInRealm:realm withObject:@[@0]];
+    [realm commitWriteTransaction];
+
+    // Empty AND/OR
+    XCTAssertEqual([[IntObject objectsInRealm:realm withPredicate:[NSCompoundPredicate andPredicateWithSubpredicates:@[]]] count], 1U);
+//    FIXME: XCTAssertEqual([[IntObject objectsInRealm:realm withPredicate:[NSCompoundPredicate orPredicateWithSubpredicates:@[]]] count], 0U);
+
+    // !YES/!NO
+//    FIXME: XCTAssertEqual([[IntObject objectsInRealm:realm withPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:[NSPredicate predicateWithValue:NO]]] count], 1U);
+//    FIXME: XCTAssertEqual([[IntObject objectsInRealm:realm withPredicate:[NSCompoundPredicate notPredicateWithSubpredicate:[NSPredicate predicateWithValue:YES]]] count], 0U);
+
+    // YES/NO
+    XCTAssertEqual([[IntObject objectsInRealm:realm withPredicate:[NSPredicate predicateWithValue:YES]] count], 1U);
+//    FIXME: XCTAssertEqual([[IntObject objectsInRealm:realm withPredicate:[NSPredicate predicateWithValue:NO]] count], 0U);
+}
+
 - (void)testPredicateValidUse
 {
     RLMRealm *realm = [RLMRealm defaultRealm];

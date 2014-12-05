@@ -7,7 +7,7 @@ x.x.x Release notes (yyyy-MM-dd)
 
 ### Enhancements
 
-* None.
+* Add support for encrypting Realm files on disk.
 
 ### Bugfixes
 
